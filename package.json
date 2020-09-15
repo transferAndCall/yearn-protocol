@@ -1,13 +1,33 @@
 {
-    "name": "yearn-protocol",
-    "devDependencies": {
-        "ethlint": "^1.2.5",
-        "prettier": "^2.1.1",
-        "prettier-plugin-solidity": "^1.0.0-alpha.57"
-    },
-    "scripts": {
-        "lint": "prettier --list-different **/*.sol **/*.json",
-        "lint:check": "prettier --check **/*.sol **/*.json",
-        "lint:fix": "prettier --write **/*.sol **/*.json"
-    }
+  "name": "yearn-protocol",
+  "devDependencies": {
+    "ethlint": "^1.2.5",
+    "prettier": "^2.1.1",
+    "prettier-plugin-solidity": "^1.0.0-alpha.57"
+  },
+  "scripts": {
+    "lint": "prettier --list-different **/*.sol **/*.json",
+    "lint:check": "prettier --check **/*.sol **/*.json",
+    "lint:fix": "prettier --write **/*.sol **/*.json"
+  },
+  "description": "",
+  "version": "0.0.1",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/transferAndCall/yearn-protocol.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPLv3",
+  "bugs": {
+    "url": "https://github.com/transferAndCall/yearn-protocol/issues"
+  },
+  "homepage": "https://github.com/transferAndCall/yearn-protocol#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.2.0"
+  }
 }

@@ -1,18 +1,17 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.6.12;
 
-import "@openzeppelinV2/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelinV2/contracts/math/SafeMath.sol";
-import "@openzeppelinV2/contracts/utils/Address.sol";
-import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelinV2/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../../interfaces/weth/WETH.sol";
-import "../../interfaces/yearn/IController.sol";
+import "../interfaces/weth/WETH.sol";
+import "../interfaces/yearn/IController.sol";
 
 // NOTE: The name of this contract was modified from yVault so as not to conflict with yVault.sol
-contract yWETH is ERC20, ERC20Detailed {
+contract yWETH is ERC20 {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -27,10 +26,9 @@ contract yWETH is ERC20, ERC20Detailed {
 
     constructor(address _token, address _controller)
         public
-        ERC20Detailed(
-            string(abi.encodePacked("yearn ", ERC20Detailed(_token).name())),
-            string(abi.encodePacked("y", ERC20Detailed(_token).symbol())),
-            ERC20Detailed(_token).decimals()
+        ERC20(
+            string(abi.encodePacked("yearn ", ERC20(_token).name())),
+            string(abi.encodePacked("y", ERC20(_token).symbol()))
         )
     {
         token = IERC20(_token);
@@ -157,14 +155,14 @@ contract yWETH is ERC20, ERC20Detailed {
         }
 
         WETH(address(token)).withdraw(r);
-        address(msg.sender).transfer(r);
+        msg.sender.transfer(r);
     }
 
     function getPricePerFullShare() public view returns (uint256) {
         return balance().mul(1e18).div(totalSupply());
     }
 
-    function() external payable {
+    receive() external payable {
         if (msg.sender != address(token)) {
             depositETH();
         }
