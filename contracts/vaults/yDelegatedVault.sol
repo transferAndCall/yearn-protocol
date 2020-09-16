@@ -28,9 +28,9 @@ contract yDelegatedVault is ERC20 {
     uint256 public ltv = 65;
     uint256 public max = 100;
 
-    address public constant aave = address(0x24a42fD28C976A61Df5D00D0599C34c4f90748c8);
+    address public immutable aave;
 
-    constructor(address _token, address _controller)
+    constructor(address _token, address _controller, address _aave)
         public
         ERC20(
             string(abi.encodePacked("yearn ", ERC20(_token).name())),
@@ -40,6 +40,7 @@ contract yDelegatedVault is ERC20 {
         token = IERC20(_token);
         governance = msg.sender;
         controller = _controller;
+        aave = _aave;
     }
 
     function debt() public view returns (uint256) {
