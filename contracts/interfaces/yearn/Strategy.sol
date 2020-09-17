@@ -2,6 +2,7 @@
 
 pragma solidity ^0.6.12;
 
+
 interface Strategy {
     function want() external view returns (address);
 
@@ -12,10 +13,12 @@ interface Strategy {
     function withdraw(address) external;
 
     // Controller | Vault role - withdraw should always return to Vault
-    function withdraw(uint256) external;
+    function withdraw(uint) external;
 
     // Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() external returns (uint256);
+    function withdrawAll() external returns (uint);
 
-    function balanceOf() external view returns (uint256);
+    function balanceOf() external view returns (uint);
+
+    function skim() external;
 }

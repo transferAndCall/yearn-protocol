@@ -1,5 +1,5 @@
 const Aave = artifacts.require('MockAave')
-const Controller = artifacts.require('Controller')
+const Controller = artifacts.require('DelegatedController')
 const Token = artifacts.require('Token')
 const yDelegatedVault = artifacts.require('yDelegatedVault')
 const { expectEvent, expectRevert } = require('@openzeppelin/test-helpers')
