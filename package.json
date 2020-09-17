@@ -1,6 +1,7 @@
 {
   "name": "yearn-protocol",
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.6",
     "ethlint": "^1.2.5",
     "prettier": "^2.1.1",
     "prettier-plugin-solidity": "^1.0.0-alpha.57"
