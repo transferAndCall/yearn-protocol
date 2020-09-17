@@ -17,26 +17,23 @@ contract DelegatedController {
     using Address for address;
     using SafeMath for uint256;
 
-    address public governance;
+    uint public constant max = 10000;
     address public onesplit;
+    address public governance;
     address public rewards;
+    uint public split = 500;
 
     // Vault to strategy mapping
     mapping(address => address) public vaults;
     // Strategy to vault mapping
     mapping(address => address) public strategies;
-
     mapping(address => mapping(address => address)) public converters;
-
     mapping(address => bool) public isVault;
     mapping(address => bool) public isStrategy;
 
-    uint public split = 500;
-    uint public constant max = 10000;
-
-    constructor(address _rewards) public {
+    constructor(address _rewards, address _onesplit) public {
         governance = msg.sender;
-        onesplit = address(0x50FDA034C0Ce7a8f7EFDAebDA7Aa7cA21CC1267e);
+        onesplit = _onesplit;
         rewards = _rewards;
     }
 
