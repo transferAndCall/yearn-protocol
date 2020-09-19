@@ -23,24 +23,30 @@ contract yDelegatedVault is ERC20 {
     address public governance;
     address public controller;
     uint256 public insurance;
-    uint256 public healthFactor = 4;
+    uint256 public healthFactor;
 
-    uint256 public ltv = 65;
-    uint256 public max = 100;
+    uint256 public constant LTV = 65;
+    uint256 public constant MAX = 100;
 
     address public immutable aave;
 
-    constructor(address _token, address _controller, address _aave)
+    constructor(
+        address _token,
+        address _controller,
+        address _aave,
+        uint256 _healthFactor
+    )
         public
         ERC20(
-            string(abi.encodePacked("yearn ", ERC20(_token).name())),
-            string(abi.encodePacked("y", ERC20(_token).symbol()))
+            string(abi.encodePacked("yflink ", ERC20(_token).name())),
+            string(abi.encodePacked("yfl", ERC20(_token).symbol()))
         )
     {
         token = IERC20(_token);
         governance = msg.sender;
         controller = _controller;
         aave = _aave;
+        healthFactor = _healthFactor;
     }
 
     function debt() public view returns (uint256) {
@@ -133,7 +139,7 @@ contract yDelegatedVault is ERC20 {
 
     function getUnderlyingPriceETH(uint256 _amount) public view returns (uint256) {
         _amount = _amount.mul(getUnderlyingPrice()).div(uint256(10)**ERC20(address(token)).decimals()); // Calculate the amount we are withdrawing in ETH
-        return _amount.mul(ltv).div(max).div(healthFactor);
+        return _amount.mul(LTV).div(MAX).div(healthFactor);
     }
 
     function over(uint256 _amount) public view returns (uint256) {

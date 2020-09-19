@@ -25,6 +25,7 @@ contract MockStrategy is Strategy {
     ) public {
         controller = _controller;
         onesplit = _onesplit;
+        governance = msg.sender;
     }
 
     function getName() external pure returns (string memory) {
