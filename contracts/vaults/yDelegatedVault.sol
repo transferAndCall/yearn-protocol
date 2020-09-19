@@ -224,6 +224,8 @@ contract yDelegatedVault is ERC20 {
         return getReservePriceETH(underlying());
     }
 
+    // earn must be called on the vault in order for deposited funds
+    // to count towards the yield farming strategy
     function earn() external {
         address _reserve = reserve();
         uint256 _borrow = availableToBorrowReserve();

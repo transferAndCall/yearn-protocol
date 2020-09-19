@@ -46,7 +46,7 @@ contract MockOneSplit is OneSplitAudit {
         address _destToken,
         uint256 _amount,
         uint256 _parts,
-        uint256 _flags // See constants in IOneSplit.sol
+        uint256 _flags
     )
         external
         view
