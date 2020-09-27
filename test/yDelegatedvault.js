@@ -46,7 +46,6 @@ contract('yDelegatedVault', (accounts) => {
         MockV2Aggregator.setProvider(web3.currentProvider)
         feedReserve = await MockV2Aggregator.new(initialReservePrice, { from: deployer })
         feedStable = await MockV2Aggregator.new(initialStablePrice, { from: deployer })
-        oracle = await Oracle.new({ from: deployer })
         lendingPool = await LendingPool.new(
             feedReserve.address,
             token.address,
@@ -54,7 +53,12 @@ contract('yDelegatedVault', (accounts) => {
             stable.address,
             { from: deployer }
         )
-        aave = await Aave.new(lendingPool.address, { from: deployer })
+        oracle = await Oracle.new({ from: deployer })
+        aave = await Aave.new(
+            lendingPool.address,
+            oracle.address,
+            { from: deployer }
+        )
         pool = await Pool.new(stable.address, { from: deployer })
         controller = await Controller.new(
             rewards,

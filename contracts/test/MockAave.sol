@@ -4,12 +4,15 @@ import "../interfaces/aave/LendingPoolAddressesProvider.sol";
 
 contract MockAave is LendingPoolAddressesProvider {
     address public immutable lendingPool;
+    address public immutable oracle;
     constructor(
-        address _lendingPool
+        address _lendingPool,
+        address _oracle
     )
         public
     {
         lendingPool = _lendingPool;
+        oracle = _oracle;
     }
 
     function getLendingPool() external view override returns (address) {
@@ -17,10 +20,10 @@ contract MockAave is LendingPoolAddressesProvider {
     }
 
     function getLendingPoolCore() external view override returns (address) {
-        return address(0);
+        return lendingPool;
     }
 
     function getPriceOracle() external view override returns (address) {
-        return address(0);
+        return oracle;
     }
 }
