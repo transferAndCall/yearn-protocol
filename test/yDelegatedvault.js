@@ -6,13 +6,22 @@ const Pool = artifacts.require('MockPool')
 const Strategy = artifacts.require('MockStrategy')
 const Token = artifacts.require('Token')
 const yDelegatedVault = artifacts.require('yDelegatedVault')
-const { expectEvent, expectRevert } = require('@openzeppelin/test-helpers')
+const {
+    expectEvent,
+    expectRevert
+} = require('@openzeppelin/test-helpers')
+const {
+    applyFee,
+    fee,
+    tokens
+} = require('./helpers/helpers')
 
 contract('yDelegatedVault', (accounts) => {
     const deployer = accounts[0]
     const governance = accounts[1]
     const rewards = accounts[2]
-    const user = accounts[3]
+    const user1 = accounts[3]
+    const user2 = accounts[4]
 
     let healthFactor = 4
     let onesplit_returnAmount = 1
@@ -64,7 +73,8 @@ contract('yDelegatedVault', (accounts) => {
             governance,
             { from: deployer }
         )
-        await token.transfer(user, 100, { from: deployer })
+        await token.transfer(user1, tokens(1), { from: deployer })
+        await token.transfer(user2, tokens(1), { from: deployer })
     })
 
     it('has expected state on deployment', async () => {
@@ -76,40 +86,62 @@ contract('yDelegatedVault', (accounts) => {
         assert.equal(4, await vault.healthFactor())
     })
 
-    it('accepts deposits and provides y token', async () => {
-        await token.increaseAllowance(vault.address, 100, { from: user })
-        await vault.deposit(100, { from: user })
-        assert.equal(100, await vault.balanceOf(user))
-        // first to deposit does not pay a fee
-        assert.equal(0, await vault.insurance())
-        assert.equal(100, await vault.balance())
-        assert.equal(100, await vault.totalSupply())
+    describe('deposit', () => {
+        it('accepts deposits and provides y token', async () => {
+            await token.increaseAllowance(vault.address, tokens(1), { from: user1 })
+            await vault.deposit(tokens(1), { from: user1 })
+            assert.isTrue(applyFee(tokens(1)).eq(await vault.balanceOf(user1)))
+            assert.isTrue(fee(tokens(1)).eq(await vault.insurance()))
+            assert.isTrue(applyFee(tokens(1)).eq(await vault.balance()))
+            assert.isTrue(applyFee(tokens(1)).eq(await vault.totalSupply()))
+        })
+
+        context('after initial deposit', () => {
+            beforeEach(async () => {
+                await token.increaseAllowance(vault.address, tokens(1), { from: user1 })
+                await vault.deposit(tokens(1), { from: user1 })
+                assert.isTrue(applyFee(tokens(1)).eq(await vault.balanceOf(user1)))
+            })
+
+            it('accepts additional deposit', async () => {
+                await token.increaseAllowance(vault.address, tokens(1), { from: user2 })
+                await vault.deposit(tokens(1), { from: user2 })
+                assert.isTrue(applyFee(tokens(1)).eq(await vault.balanceOf(user2)))
+                assert.isTrue(fee(tokens(2)).eq(await vault.insurance()))
+            })
+        })
     })
 
-    it('only allows governance to call setHealthFactor', async () => {
-        await expectRevert(
-            vault.setHealthFactor(1, { from: deployer }),
-            '!governance'
-        )
-        await vault.setHealthFactor(2, { from: governance })
-        assert.equal(2, await vault.healthFactor())
+    describe('setHealthFactor', () => {
+        it('only allows governance to call setHealthFactor', async () => {
+            await expectRevert(
+                vault.setHealthFactor(1, { from: deployer }),
+                '!governance'
+            )
+            await vault.setHealthFactor(2, { from: governance })
+            assert.equal(2, await vault.healthFactor())
+        })
     })
 
-    it('only allows governance to call setGovernance', async () => {
-        await expectRevert(
-            vault.setGovernance(deployer, { from: deployer }),
-            '!governance'
-        )
-        await vault.setGovernance(user, { from: governance })
-        assert.equal(user, await vault.governance())
+    describe('setGovernance', () => {
+        it('only allows governance to call setGovernance', async () => {
+            await expectRevert(
+                vault.setGovernance(deployer, { from: deployer }),
+                '!governance'
+            )
+            await vault.setGovernance(user1, { from: governance })
+            assert.equal(user1, await vault.governance())
+        })
     })
 
-    it('only allows governance to call setController', async () => {
-        await expectRevert(
-            vault.setController(deployer, { from: deployer }),
-            '!governance'
-        )
-        await vault.setController(user, { from: governance })
-        assert.equal(user, await vault.controller())
+    describe('setController', () => {
+        it('only allows governance to call setController', async () => {
+            await expectRevert(
+                vault.setController(deployer, { from: deployer }),
+                '!governance'
+            )
+            await vault.setController(user1, { from: governance })
+            assert.equal(user1, await vault.controller())
+        })
     })
 })
