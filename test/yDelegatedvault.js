@@ -1,6 +1,7 @@
 const Aave = artifacts.require('MockAave')
 const Controller = artifacts.require('DelegatedController')
 const { MockV2Aggregator } = require('@chainlink/contracts/truffle/v0.6/MockV2Aggregator')
+const MockAaveToken = artifacts.require('MockAaveToken')
 const LendingPool = artifacts.require('MockLendingPool')
 const Oracle = artifacts.require('MockOracle')
 const OneSplit = artifacts.require('MockOneSplit')
@@ -33,10 +34,11 @@ contract('yDelegatedVault', (accounts) => {
     let onesplit_returnAmount = 1
     let onesplit_distribution = [1]
 
-    let aave, controller, feedReserve, feedStable, lendingPool, pool, oracle, onesplit, strategy, stable, token, vault
+    let aave, controller, feedReserve, feedStable, lendingPool, pool, oracle, onesplit, strategy, stable, token, vault, underlying
 
     beforeEach(async () => {
-        token = await Token.new({ from: deployer })
+        underlying = await Token.new({ from: deployer })
+        token = await MockAaveToken.new(underlying.address, { from: deployer })
         stable = await Token.new({ from: deployer })
         onesplit = await OneSplit.new(
             onesplit_returnAmount,
@@ -80,6 +82,11 @@ contract('yDelegatedVault', (accounts) => {
             { from: deployer }
         )
         await oracle.setPriceOracle(
+            underlying.address,
+            feedReserve.address,
+            { from: deployer }
+        )
+        await oracle.setPriceOracle(
             token.address,
             feedReserve.address,
             { from: deployer }
@@ -115,8 +122,8 @@ contract('yDelegatedVault', (accounts) => {
         assert.equal(aave.address, await vault.aave())
         assert.equal(token.address, await vault.token())
         assert.equal(controller.address, await vault.controller())
-        assert.equal('yflink yearn.finance test token', await vault.name())
-        assert.equal('yflTEST', await vault.symbol())
+        assert.equal('yflink Chainlink aToken', await vault.name())
+        assert.equal('yflaLINK', await vault.symbol())
         assert.equal(4, await vault.healthFactor())
     })
 
@@ -149,6 +156,12 @@ contract('yDelegatedVault', (accounts) => {
             it('has no credit or debt', async () => {
                 assert.isTrue(new BN(0).eq(await vault.credit()))
                 assert.isTrue(new BN(0).eq(await vault.debt()))
+            })
+
+            it('allows withdraw', async () => {
+                await vault.withdrawAll({ from: user1 })
+                assert.isTrue(applyFee(tokens(1)).eq(await token.balanceOf(user1)))
+                assert.equal(0, await vault.totalSupply())
             })
         })
     })
