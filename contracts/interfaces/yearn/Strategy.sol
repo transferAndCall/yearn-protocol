@@ -13,12 +13,12 @@ interface Strategy {
     function withdraw(address) external;
 
     // Controller | Vault role - withdraw should always return to Vault
-    function withdraw(uint) external;
+    function withdraw(uint256) external;
 
     // Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() external returns (uint);
+    function withdrawAll() external returns (uint256);
 
-    function balanceOf() external view returns (uint);
+    function balanceOf() external view returns (uint256);
 
     function skim() external;
 }
