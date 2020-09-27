@@ -21,11 +21,15 @@ contract MockStrategy is Strategy {
 
     constructor(
         address _controller,
-        address _onesplit
+        address _onesplit,
+        address _want,
+        address _pool
     ) public {
         controller = _controller;
         onesplit = _onesplit;
         governance = msg.sender;
+        want = _want;
+        pool = IMockPool(_pool);
     }
 
     function getName() external pure returns (string memory) {

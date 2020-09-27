@@ -1,12 +1,15 @@
 const Aave = artifacts.require('MockAave')
 const Controller = artifacts.require('DelegatedController')
+const { MockV2Aggregator } = require('@chainlink/contracts/truffle/v0.6/MockV2Aggregator')
 const LendingPool = artifacts.require('MockLendingPool')
+const Oracle = artifacts.require('MockOracle')
 const OneSplit = artifacts.require('MockOneSplit')
 const Pool = artifacts.require('MockPool')
 const Strategy = artifacts.require('MockStrategy')
 const Token = artifacts.require('Token')
 const yDelegatedVault = artifacts.require('yDelegatedVault')
 const {
+    BN,
     expectEvent,
     expectRevert
 } = require('@openzeppelin/test-helpers')
@@ -23,22 +26,36 @@ contract('yDelegatedVault', (accounts) => {
     const user1 = accounts[3]
     const user2 = accounts[4]
 
+    const initialReservePrice = new BN(web3.utils.toWei('0.03'))
+    const initialStablePrice = new BN(web3.utils.toWei('0.003'))
+
     let healthFactor = 4
     let onesplit_returnAmount = 1
     let onesplit_distribution = [1]
 
-    let aave, controller, lendingPool, pool, onesplit, strategy, token, vault
+    let aave, controller, feedReserve, feedStable, lendingPool, pool, oracle, onesplit, strategy, stable, token, vault
 
     beforeEach(async () => {
         token = await Token.new({ from: deployer })
+        stable = await Token.new({ from: deployer })
         onesplit = await OneSplit.new(
             onesplit_returnAmount,
             onesplit_distribution,
             { from: deployer }
         )
-        lendingPool = await LendingPool.new({ from: deployer })
+        MockV2Aggregator.setProvider(web3.currentProvider)
+        feedReserve = await MockV2Aggregator.new(initialReservePrice, { from: deployer })
+        feedStable = await MockV2Aggregator.new(initialStablePrice, { from: deployer })
+        oracle = await Oracle.new({ from: deployer })
+        lendingPool = await LendingPool.new(
+            feedReserve.address,
+            token.address,
+            feedStable.address,
+            stable.address,
+            { from: deployer }
+        )
         aave = await Aave.new(lendingPool.address, { from: deployer })
-        pool = await Pool.new(token.address, { from: deployer })
+        pool = await Pool.new(stable.address, { from: deployer })
         controller = await Controller.new(
             rewards,
             onesplit.address,
@@ -54,6 +71,18 @@ contract('yDelegatedVault', (accounts) => {
         strategy = await Strategy.new(
             controller.address,
             onesplit.address,
+            stable.address,
+            pool.address,
+            { from: deployer }
+        )
+        await oracle.setPriceOracle(
+            token.address,
+            feedReserve.address,
+            { from: deployer }
+        )
+        await oracle.setPriceOracle(
+            stable.address,
+            feedStable.address,
             { from: deployer }
         )
         await controller.setStrategy(
@@ -75,6 +104,7 @@ contract('yDelegatedVault', (accounts) => {
         )
         await token.transfer(user1, tokens(1), { from: deployer })
         await token.transfer(user2, tokens(1), { from: deployer })
+        await stable.transfer(lendingPool.address, tokens(30000), { from: deployer })
     })
 
     it('has expected state on deployment', async () => {
@@ -110,6 +140,11 @@ contract('yDelegatedVault', (accounts) => {
                 assert.isTrue(fee(tokens(2)).eq(await vault.insurance()))
                 assert.isTrue(applyFee(tokens(2)).eq(await vault.balance()))
                 assert.isTrue(applyFee(tokens(2)).eq(await vault.totalSupply()))
+            })
+
+            it('has no credit or debt', async () => {
+                assert.isTrue(new BN(0).eq(await vault.credit()))
+                assert.isTrue(new BN(0).eq(await vault.debt()))
             })
         })
     })

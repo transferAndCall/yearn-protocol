@@ -11,6 +11,7 @@
         "@openzeppelin/contracts": "^3.2.0"
     },
     "devDependencies": {
+        "@chainlink/contracts": "0.0.10",
         "@openzeppelin/test-helpers": "^0.5.6",
         "ethlint": "^1.2.5",
         "prettier": "^2.1.1",
