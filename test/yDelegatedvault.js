@@ -108,6 +108,8 @@ contract('yDelegatedVault', (accounts) => {
                 await vault.deposit(tokens(1), { from: user2 })
                 assert.isTrue(applyFee(tokens(1)).eq(await vault.balanceOf(user2)))
                 assert.isTrue(fee(tokens(2)).eq(await vault.insurance()))
+                assert.isTrue(applyFee(tokens(2)).eq(await vault.balance()))
+                assert.isTrue(applyFee(tokens(2)).eq(await vault.totalSupply()))
             })
         })
     })
