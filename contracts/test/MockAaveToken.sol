@@ -10,7 +10,10 @@ contract MockAaveToken is AaveToken, ERC20 {
         address _underlying
     )
         public
-        ERC20("Chainlink aToken", "aLINK")
+        ERC20(
+            string(abi.encodePacked("Aave Interest bearing ", ERC20(_underlying).symbol())),
+            string(abi.encodePacked("a", ERC20(_underlying).symbol()))
+        )
     {
         _mint(msg.sender, 30000 * 10**18);
         underlying = _underlying;

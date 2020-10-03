@@ -1,6 +1,5 @@
 const Aave = artifacts.require('MockAave')
 const Controller = artifacts.require('DelegatedController')
-const { MockV2Aggregator } = require('@chainlink/contracts/truffle/v0.6/MockV2Aggregator')
 const MockAaveToken = artifacts.require('MockAaveToken')
 const LendingPool = artifacts.require('MockLendingPool')
 const Oracle = artifacts.require('MockOracle')
@@ -9,6 +8,9 @@ const Pool = artifacts.require('MockPool')
 const Strategy = artifacts.require('MockStrategy')
 const Token = artifacts.require('Token')
 const yDelegatedVault = artifacts.require('yDelegatedVault')
+const {
+    MockV2Aggregator
+} = require('@chainlink/contracts/truffle/v0.6/MockV2Aggregator')
 const {
     BN,
     expectEvent,
@@ -34,9 +36,19 @@ contract('yDelegatedVault', (accounts) => {
     this.onesplit_distribution = [1]
 
     beforeEach(async () => {
-        this.underlying = await Token.new({ from: deployer })
-        this.token = await MockAaveToken.new(this.underlying.address, { from: deployer })
-        this.stable = await Token.new({ from: deployer })
+        this.LINK = await Token.new(
+            'ChainLink Token',
+            'LINK',
+            18,
+            { from: deployer }
+        )
+        this.aLINK = await MockAaveToken.new(this.LINK.address, { from: deployer })
+        this.USDC = await Token.new(
+            'USD Coin',
+            'USDC',
+            6,
+            { from: deployer }
+        )
         this.onesplit = await OneSplit.new(
             this.onesplit_returnAmount,
             this.onesplit_distribution,
@@ -47,9 +59,9 @@ contract('yDelegatedVault', (accounts) => {
         this.feedStable = await MockV2Aggregator.new(this.stablePrice, { from: deployer })
         this.lendingPool = await LendingPool.new(
             this.feedReserve.address,
-            this.token.address,
+            this.aLINK.address,
             this.feedStable.address,
-            this.stable.address,
+            this.USDC.address,
             { from: deployer }
         )
         this.oracle = await Oracle.new({ from: deployer })
@@ -58,14 +70,14 @@ contract('yDelegatedVault', (accounts) => {
             this.oracle.address,
             { from: deployer }
         )
-        this.pool = await Pool.new(this.stable.address, { from: deployer })
+        this.pool = await Pool.new(this.USDC.address, { from: deployer })
         this.controller = await Controller.new(
             rewards,
             this.onesplit.address,
             { from: deployer }
         )
         this.vault = await yDelegatedVault.new(
-            this.token.address,
+            this.aLINK.address,
             this.controller.address,
             this.aave.address,
             this.healthFactor,
@@ -74,22 +86,22 @@ contract('yDelegatedVault', (accounts) => {
         this.strategy = await Strategy.new(
             this.controller.address,
             this.onesplit.address,
-            this.stable.address,
+            this.USDC.address,
             this.pool.address,
             { from: deployer }
         )
         await this.oracle.setPriceOracle(
-            this.underlying.address,
+            this.LINK.address,
             this.feedReserve.address,
             { from: deployer }
         )
         await this.oracle.setPriceOracle(
-            this.token.address,
+            this.aLINK.address,
             this.feedReserve.address,
             { from: deployer }
         )
         await this.oracle.setPriceOracle(
-            this.stable.address,
+            this.USDC.address,
             this.feedStable.address,
             { from: deployer }
         )
@@ -110,23 +122,23 @@ contract('yDelegatedVault', (accounts) => {
             governance,
             { from: deployer }
         )
-        await this.token.transfer(user1, tokens(1), { from: deployer })
-        await this.token.transfer(user2, tokens(1), { from: deployer })
-        await this.stable.transfer(this.lendingPool.address, tokens(30000), { from: deployer })
+        await this.aLINK.transfer(user1, tokens(1), { from: deployer })
+        await this.aLINK.transfer(user2, tokens(1), { from: deployer })
+        await this.USDC.transfer(this.lendingPool.address, tokens(30000), { from: deployer })
     })
 
     it('has expected state on deployment', async () => {
         assert.equal(this.aave.address, await this.vault.aave())
-        assert.equal(this.token.address, await this.vault.token())
+        assert.equal(this.aLINK.address, await this.vault.token())
         assert.equal(this.controller.address, await this.vault.controller())
-        assert.equal('yflink Chainlink aToken', await this.vault.name())
+        assert.equal('yflink Aave Interest bearing LINK', await this.vault.name())
         assert.equal('yflaLINK', await this.vault.symbol())
         assert.equal(4, await this.vault.healthFactor())
     })
 
     describe('deposit', () => {
         it('accepts deposits and provides y token', async () => {
-            await this.token.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
+            await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
             await this.vault.deposit(tokens(1), { from: user1 })
             assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user1)))
             assert.isTrue(fee(tokens(1)).eq(await this.vault.insurance()))
@@ -136,13 +148,13 @@ contract('yDelegatedVault', (accounts) => {
 
         context('after initial deposit', () => {
             beforeEach(async () => {
-                await this.token.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
+                await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
                 await this.vault.deposit(tokens(1), { from: user1 })
                 assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user1)))
             })
 
             it('accepts additional deposit', async () => {
-                await this.token.increaseAllowance(this.vault.address, tokens(1), { from: user2 })
+                await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user2 })
                 await this.vault.deposit(tokens(1), { from: user2 })
                 assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user2)))
                 assert.isTrue(fee(tokens(2)).eq(await this.vault.insurance()))
@@ -157,7 +169,7 @@ contract('yDelegatedVault', (accounts) => {
 
             it('allows withdraw', async () => {
                 await this.vault.withdrawAll({ from: user1 })
-                assert.isTrue(applyFee(tokens(1)).eq(await this.token.balanceOf(user1)))
+                assert.isTrue(applyFee(tokens(1)).eq(await this.aLINK.balanceOf(user1)))
                 assert.equal(0, await this.vault.totalSupply())
             })
         })
