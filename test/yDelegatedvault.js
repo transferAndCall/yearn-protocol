@@ -27,25 +27,24 @@ contract('yDelegatedVault', (accounts) => {
     const user1 = accounts[3]
     const user2 = accounts[4]
 
-    const initialReservePrice = new BN(web3.utils.toWei('0.03'))
-    const initialStablePrice = new BN(web3.utils.toWei('0.003'))
-
-    let healthFactor = 4
-    let onesplit_returnAmount = 1
-    let onesplit_distribution = [1]
+    this.reservePrice = new BN(web3.utils.toWei('0.03'))
+    this.stablePrice = new BN(web3.utils.toWei('0.003'))
+    this.healthFactor = 4
+    this.onesplit_returnAmount = 1
+    this.onesplit_distribution = [1]
 
     beforeEach(async () => {
         this.underlying = await Token.new({ from: deployer })
         this.token = await MockAaveToken.new(this.underlying.address, { from: deployer })
         this.stable = await Token.new({ from: deployer })
         this.onesplit = await OneSplit.new(
-            onesplit_returnAmount,
-            onesplit_distribution,
+            this.onesplit_returnAmount,
+            this.onesplit_distribution,
             { from: deployer }
         )
         MockV2Aggregator.setProvider(web3.currentProvider)
-        this.feedReserve = await MockV2Aggregator.new(initialReservePrice, { from: deployer })
-        this.feedStable = await MockV2Aggregator.new(initialStablePrice, { from: deployer })
+        this.feedReserve = await MockV2Aggregator.new(this.reservePrice, { from: deployer })
+        this.feedStable = await MockV2Aggregator.new(this.stablePrice, { from: deployer })
         this.lendingPool = await LendingPool.new(
             this.feedReserve.address,
             this.token.address,
@@ -69,7 +68,7 @@ contract('yDelegatedVault', (accounts) => {
             this.token.address,
             this.controller.address,
             this.aave.address,
-            healthFactor,
+            this.healthFactor,
             { from: deployer }
         )
         this.strategy = await Strategy.new(
