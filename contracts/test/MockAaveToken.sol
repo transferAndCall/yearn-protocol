@@ -15,7 +15,7 @@ contract MockAaveToken is AaveToken, ERC20 {
             string(abi.encodePacked("a", ERC20(_underlying).symbol()))
         )
     {
-        _mint(msg.sender, 30000 * 10**18);
+        _mint(msg.sender, 1000000000 * 10**18);
         underlying = _underlying;
     }
 
