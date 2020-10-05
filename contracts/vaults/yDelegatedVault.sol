@@ -88,8 +88,8 @@ contract yDelegatedVault is ERC20 {
 
     function repay(address reserve, uint256 amount) public {
         // Required for certain stable coins (USDT for example)
-        IERC20(reserve).approve(address(getAaveCore()), 0);
-        IERC20(reserve).approve(address(getAaveCore()), amount);
+        IERC20(reserve).approve(getAaveCore(), 0);
+        IERC20(reserve).approve(getAaveCore(), amount);
         Aave(getAave()).repay(reserve, amount, address(uint160(address(this))));
     }
 

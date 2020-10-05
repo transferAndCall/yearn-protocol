@@ -40,6 +40,7 @@ contract('yDelegatedVault', (accounts) => {
             'ChainLink Token',
             'LINK',
             18,
+            1000000000,
             { from: deployer }
         )
         this.aLINK = await MockAaveToken.new(this.LINK.address, { from: deployer })
@@ -47,6 +48,7 @@ contract('yDelegatedVault', (accounts) => {
             'USD Coin',
             'USDC',
             6,
+            30000,
             { from: deployer }
         )
         this.onesplit = await OneSplit.new(
@@ -122,9 +124,9 @@ contract('yDelegatedVault', (accounts) => {
             governance,
             { from: deployer }
         )
-        await this.aLINK.transfer(user1, tokens(1), { from: deployer })
-        await this.aLINK.transfer(user2, tokens(1), { from: deployer })
-        await this.USDC.transfer(this.lendingPool.address, tokens(30000), { from: deployer })
+        await this.aLINK.transfer(user1, tokens(1, 18), { from: deployer })
+        await this.aLINK.transfer(user2, tokens(1, 18), { from: deployer })
+        await this.USDC.transfer(this.lendingPool.address, tokens(30000, 6), { from: deployer })
     })
 
     it('has expected state on deployment', async () => {
@@ -138,28 +140,28 @@ contract('yDelegatedVault', (accounts) => {
 
     describe('deposit', () => {
         it('accepts deposits and provides y token', async () => {
-            await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
-            await this.vault.deposit(tokens(1), { from: user1 })
-            assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user1)))
-            assert.isTrue(fee(tokens(1)).eq(await this.vault.insurance()))
-            assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balance()))
-            assert.isTrue(applyFee(tokens(1)).eq(await this.vault.totalSupply()))
+            await this.aLINK.increaseAllowance(this.vault.address, tokens(1, 18), { from: user1 })
+            await this.vault.deposit(tokens(1, 18), { from: user1 })
+            assert.isTrue(applyFee(tokens(1, 18)).eq(await this.vault.balanceOf(user1)))
+            assert.isTrue(fee(tokens(1, 18)).eq(await this.vault.insurance()))
+            assert.isTrue(applyFee(tokens(1, 18)).eq(await this.vault.balance()))
+            assert.isTrue(applyFee(tokens(1, 18)).eq(await this.vault.totalSupply()))
         })
 
         context('after initial deposit', () => {
             beforeEach(async () => {
-                await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user1 })
-                await this.vault.deposit(tokens(1), { from: user1 })
-                assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user1)))
+                await this.aLINK.increaseAllowance(this.vault.address, tokens(1, 18), { from: user1 })
+                await this.vault.deposit(tokens(1, 18), { from: user1 })
+                assert.isTrue(applyFee(tokens(1, 18)).eq(await this.vault.balanceOf(user1)))
             })
 
             it('accepts additional deposit', async () => {
-                await this.aLINK.increaseAllowance(this.vault.address, tokens(1), { from: user2 })
-                await this.vault.deposit(tokens(1), { from: user2 })
-                assert.isTrue(applyFee(tokens(1)).eq(await this.vault.balanceOf(user2)))
-                assert.isTrue(fee(tokens(2)).eq(await this.vault.insurance()))
-                assert.isTrue(applyFee(tokens(2)).eq(await this.vault.balance()))
-                assert.isTrue(applyFee(tokens(2)).eq(await this.vault.totalSupply()))
+                await this.aLINK.increaseAllowance(this.vault.address, tokens(1, 18), { from: user2 })
+                await this.vault.deposit(tokens(1, 18), { from: user2 })
+                assert.isTrue(applyFee(tokens(1, 18)).eq(await this.vault.balanceOf(user2)))
+                assert.isTrue(fee(tokens(2, 18)).eq(await this.vault.insurance()))
+                assert.isTrue(applyFee(tokens(2, 18)).eq(await this.vault.balance()))
+                assert.isTrue(applyFee(tokens(2, 18)).eq(await this.vault.totalSupply()))
             })
 
             it('has no credit or debt', async () => {
@@ -169,7 +171,7 @@ contract('yDelegatedVault', (accounts) => {
 
             it('allows withdraw', async () => {
                 await this.vault.withdrawAll({ from: user1 })
-                assert.isTrue(applyFee(tokens(1)).eq(await this.aLINK.balanceOf(user1)))
+                assert.isTrue(applyFee(tokens(1, 18)).eq(await this.aLINK.balanceOf(user1)))
                 assert.equal(0, await this.vault.totalSupply())
             })
         })
