@@ -13,22 +13,29 @@ import "../interfaces/aave/LendingPoolAddressesProvider.sol";
 import "../interfaces/yearn/IController.sol";
 import "../interfaces/yearn/Vault.sol";
 
-contract StrategyVaultUSDC {
+contract StrategyVault {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    address public constant want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    address public constant vault = address(0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e);
-
-    address public constant aave = address(0x24a42fD28C976A61Df5D00D0599C34c4f90748c8);
+    address public immutable want;
+    address public immutable vault;
+    address public immutable aave;
 
     address public governance;
     address public controller;
 
-    constructor(address _controller) public {
+    constructor(
+        address _aave,
+        address _controller,
+        address _want,
+        address _vault
+    ) public {
         governance = msg.sender;
         controller = _controller;
+        aave = _aave;
+        want = _want;
+        vault = _vault;
     }
 
     function deposit() external {

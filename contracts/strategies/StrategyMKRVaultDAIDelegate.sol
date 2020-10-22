@@ -1,16 +1,16 @@
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.12;
 
-import "@openzeppelinV2/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelinV2/contracts/math/SafeMath.sol";
-import "@openzeppelinV2/contracts/utils/Address.sol";
-import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/maker/Maker.sol";
-import "../../interfaces/uniswap/Uni.sol";
+import "../interfaces/maker/Maker.sol";
+import "../interfaces/uniswap/Uni.sol";
 
-import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Strategy.sol";
-import "../../interfaces/yearn/Vault.sol";
+import "../interfaces/yearn/IController.sol";
+import "../interfaces/yearn/Strategy.sol";
+import "../interfaces/yearn/Vault.sol";
 
 contract StrategyMKRVaultDAIDelegate {
     using SafeERC20 for IERC20;

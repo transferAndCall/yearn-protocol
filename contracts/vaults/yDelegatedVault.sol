@@ -1,20 +1,19 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.6.12;
 
-import "@openzeppelinV2/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelinV2/contracts/math/SafeMath.sol";
-import "@openzeppelinV2/contracts/utils/Address.sol";
-import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelinV2/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelinV2/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../../interfaces/aave/Aave.sol";
-import "../../interfaces/aave/AaveToken.sol";
-import "../../interfaces/aave/Oracle.sol";
-import "../../interfaces/aave/LendingPoolAddressesProvider.sol";
-import "../../interfaces/yearn/IController.sol";
+import "../interfaces/aave/Aave.sol";
+import "../interfaces/aave/AaveToken.sol";
+import "../interfaces/aave/Oracle.sol";
+import "../interfaces/aave/LendingPoolAddressesProvider.sol";
+import "../interfaces/yearn/IController.sol";
 
-contract yDelegatedVault is ERC20, ERC20Detailed {
+contract yDelegatedVault is ERC20 {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -24,24 +23,30 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
     address public governance;
     address public controller;
     uint256 public insurance;
-    uint256 public healthFactor = 4;
+    uint256 public healthFactor;
 
-    uint256 public ltv = 65;
-    uint256 public max = 100;
+    uint256 public constant LTV = 65;
+    uint256 public constant MAX = 100;
 
-    address public constant aave = address(0x24a42fD28C976A61Df5D00D0599C34c4f90748c8);
+    address public immutable aave;
 
-    constructor(address _token, address _controller)
+    constructor(
+        address _token,
+        address _controller,
+        address _aave,
+        uint256 _healthFactor
+    )
         public
-        ERC20Detailed(
-            string(abi.encodePacked("yearn ", ERC20Detailed(_token).name())),
-            string(abi.encodePacked("y", ERC20Detailed(_token).symbol())),
-            ERC20Detailed(_token).decimals()
+        ERC20(
+            string(abi.encodePacked("yflink ", ERC20(_token).name())),
+            string(abi.encodePacked("yfl", ERC20(_token).symbol()))
         )
     {
         token = IERC20(_token);
         governance = msg.sender;
         controller = _controller;
+        aave = _aave;
+        healthFactor = _healthFactor;
     }
 
     function debt() public view returns (uint256) {
@@ -83,8 +88,8 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
 
     function repay(address reserve, uint256 amount) public {
         // Required for certain stable coins (USDT for example)
-        IERC20(reserve).approve(address(getAaveCore()), 0);
-        IERC20(reserve).approve(address(getAaveCore()), amount);
+        IERC20(reserve).approve(getAaveCore(), 0);
+        IERC20(reserve).approve(getAaveCore(), amount);
         Aave(getAave()).repay(reserve, amount, address(uint160(address(this))));
     }
 
@@ -133,8 +138,8 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
     }
 
     function getUnderlyingPriceETH(uint256 _amount) public view returns (uint256) {
-        _amount = _amount.mul(getUnderlyingPrice()).div(uint256(10)**ERC20Detailed(address(token)).decimals()); // Calculate the amount we are withdrawing in ETH
-        return _amount.mul(ltv).div(max).div(healthFactor);
+        _amount = _amount.mul(getUnderlyingPrice()).div(uint256(10)**ERC20(address(token)).decimals()); // Calculate the amount we are withdrawing in ETH
+        return _amount.mul(LTV).div(MAX).div(healthFactor);
     }
 
     function over(uint256 _amount) public view returns (uint256) {
@@ -149,7 +154,7 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
         }
         if (_maxSafeETH < _totalBorrowsETH) {
             uint256 _over = _totalBorrowsETH.mul(_totalBorrowsETH.sub(_maxSafeETH)).div(_totalBorrowsETH);
-            _over = _over.mul(uint256(10)**ERC20Detailed(_reserve).decimals()).div(getReservePrice());
+            _over = _over.mul(uint256(10)**ERC20(_reserve).decimals()).div(getReservePrice());
             return _over;
         } else {
             return 0;
@@ -211,7 +216,7 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
         address _reserve = reserve();
         uint256 _available = availableToBorrowETH();
         if (_available > 0) {
-            return _available.mul(uint256(10)**ERC20Detailed(_reserve).decimals()).div(getReservePrice());
+            return _available.mul(uint256(10)**ERC20(_reserve).decimals()).div(getReservePrice());
         } else {
             return 0;
         }
@@ -225,6 +230,8 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
         return getReservePriceETH(underlying());
     }
 
+    // earn must be called on the vault in order for deposited funds
+    // to count towards the yield farming strategy
     function earn() external {
         address _reserve = reserve();
         uint256 _borrow = availableToBorrowReserve();
